@@ -1,0 +1,70 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+plugins {
+    id("org.jetbrains.kotlin.jvm") version "1.9.0"
+    id("antlr")
+}
+def KotlinVersion = "1.9.0"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:$KotlinVersion")
+    antlr("org.antlr:antlr4:4.11.1")
+    testImplementation("io.kotest:kotest-runner-junit5:5.9.1")
+    testImplementation("io.kotest:kotest-assertions-core:5.9.1")
+}
+
+configurations.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin") {
+            useVersion(KotlinVersion)
+        }
+    }
+}
+
+group = 'com.tschumacher'
+version = '1.0-SNAPSHOT'
+
+tasks.generateGrammarSource {
+    arguments = ["-visitor", "-long-messages"]
+}
+
+tasks.generateTestGrammarSource {
+    arguments = ['-visitor', '-long-messages']
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+kotlin {
+    jvmToolchain(17)
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs("src/main/antlr", "build/generated-src/antlr/main")
+        }
+    }
+    test {
+        java {
+            srcDirs("src/test/antlr", "build/generated-src/antlr/test")
+        }
+    }
+}
+
+tasks.named("compileKotlin") {
+    dependsOn tasks.generateGrammarSource
+    kotlinOptions {
+        jvmTarget = "17" // or "17"
+    }
+}
+
+tasks.named("compileTestKotlin") {
+    dependsOn tasks.generateTestGrammarSource
+    kotlinOptions {
+        jvmTarget = "17" // or "17"
+    }
+}
